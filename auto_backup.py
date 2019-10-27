@@ -89,8 +89,8 @@ if __name__ == '__main__':
         cnopts   
     )
     auto_backup.start(
-        'remote-dir', 
-        'local-dir',
+        '/home/hbladmin/hbposts.com/', 
+        'D:\Programming\hbl\local_backup'
         preserve_mtime=False
     )
 

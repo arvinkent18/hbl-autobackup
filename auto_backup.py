@@ -75,7 +75,7 @@ class AutoBackup:
                         os.mkdir(local_path)
                     except OSError:
                         pass
-                    self.start(remote_dir, local_dir, preserve_mtime)      
+                    self.start(remote_dir, local_path, preserve_mtime)      
                 elif S_ISREG(mode):
                     sftp.get(remote_path, local_path, preserve_mtime=preserve_mtime)
     
@@ -89,8 +89,8 @@ if __name__ == '__main__':
         cnopts   
     )
     auto_backup.start(
-        '/home/hbladmin/hbposts.com/', 
-        'D:\Programming\hbl\local_backup'
+        '/home/hbladmin/hbposts.com/', # 
+        'D:\Programming\hbl\local_backup',
         preserve_mtime=False
     )
 

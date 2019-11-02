@@ -57,38 +57,31 @@ class AutoBackup:
         self._option = x  
 
     # Connection to SFTP
-    def start(self, remote_dir, local_dir, preserve_mtime=False):
-        print('Connection successfully to HBL remote server established ...')
+    def connect(self):
+        return pysftp.Connection(self.host, username=self.username, password=self.password, cnopts=self.option) 
 
-        with pysftp.Connection(
-            self.host, 
-            username=self.username, 
-            password=self.password, 
-            cnopts=self.option
-        ) as sftp:
-            capture_index = None
-            directories = []
+    # Starts the backing up of files in the remote server to local
+    def start(self, sftp, remote_dir, local_dir, preserve_mtime=False):
+        for index, entry in enumerate(sftp.listdir_attr(remote_dir)):
+            print('Downloading {}'.format(entry.filename))
 
-            for index, entry in enumerate(sftp.listdir_attr(remote_dir)):
-                capture_index = index
+            remote_path = remote_dir + '/' + entry.filename
+            local_path = os.path.join(local_dir, entry.filename) 
+            mode = entry.st_mode
 
-                print('Index: {} Downloading {}'.format(index, entry.filename))
+            print('Directory? {}'.format(S_ISDIR(mode)))
 
-                remote_path = remote_dir + '/' + entry.filename
-                local_path = os.path.join(local_dir, entry.filename) 
-                mode = entry.st_mode
+            if S_ISDIR(mode):
+                try:
+                    os.mkdir(local_path)
+                    print('Generated Directory: {}'.format(local_path))
+                except OSError:     
+                    pass
+                self.start(sftp, remote_path, local_path, preserve_mtime)  
+            elif S_ISREG(mode):
+                sftp.get(remote_path, local_path, preserve_mtime=preserve_mtime) 
 
-                print('Mode: {}'.format(mode))
-                print('Directory? {}'.format(S_ISDIR(mode)))
-
-                if S_ISDIR(mode):
-                    directories.append(entry.filename)      
-                elif S_ISREG(mode):
-                    sftp.get(remote_path, local_path, preserve_mtime=preserve_mtime)
-
-            for directory in enumarate(directories):
-                print(directory)
-             
+                print('Downloaded {}'.format(entry.filename))             
     
 if __name__ == '__main__':
     cnopts = pysftp.CnOpts()
@@ -99,10 +92,6 @@ if __name__ == '__main__':
         os.getenv("HOST_PASSWORD"),
         cnopts   
     )
-    auto_backup.start(
-        sys.argv[1], 
-        sys.argv[2],
-        preserve_mtime=False
-    )
-
+    sftp = auto_backup.connect()
+    auto_backup.start(sftp, sys.argv[1], sys.argv[2], preserve_mtime=False)
     
